@@ -17,7 +17,7 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     // The abstract superclass of signals.
     // Each signal has a *rank*, such that
     // a) the rank of every signal is at least that of its downstream neighbours
-    // b) the rank of a signal with more than one downstream neighour
+    // b) the rank of a signal with more than one downstream neighbour
     //    is strictly greer than that of its downstream neighbours.
     var signals = 0;
     function Signal() {
@@ -344,6 +344,9 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     Behaviour.prototype.map = function(fun) {
 	return new MapBehaviour(fun,this);
     }
+    Behaviour.prototype.join = function() {
+        return new JoinBehaviour(this);
+    }
     Behaviour.prototype.text = function() {
 	return new TextBehaviour(this);
     }
@@ -375,7 +378,7 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
 	Behaviour0.call(this);
     }
     Behaviour0.prototype.mixin(ConstantBehaviour.prototype);
-    // Map a function onto a event
+    // Map a function onto a behaviour
     function MapBehaviour(fun,downstream) {
 	this.fun = fun;
 	Behaviour1.call(this,downstream);
@@ -383,6 +386,28 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     Behaviour1.prototype.mixin(MapBehaviour.prototype);
     MapBehaviour.prototype.notify = function(now,value) {
 	this.notifyUpstream(now,this.fun(now,value));
+    }
+    // Join a behavior of behaviours into a behaviour
+    function JoinBehaviour(downstream) {
+	Behaviour1.call(this,downstream);
+    }
+    Behaviour1.prototype.mixin(JoinBehaviour.prototype);
+    JoinBehaviour.prototype.compareAs = function() {
+        if(this.value.compareAs) {
+            return this.value.compareAs();
+        } else {
+            return this.value;
+        }
+    }
+    JoinBehaviour.prototype.notify = function(now,behaviour) {
+        this.notifyUpstream(now,behaviour.value);
+    }
+    JoinBehaviour.prototype.attachTo = function(node) {
+	// We add a dummy upstream neighbour to stop us from being disposed of
+	this.addUpstream({ uid: -1, rank: this.rank, notify: function(now, value){
+            while (node.firstChild) { node.removeChild(node.firstChild); }
+	    value.appendChildrenOf(node);
+        }});
     }
     // Convert an event into a behaviour
     function HoldBehaviour(init,downstream) {
@@ -484,8 +509,8 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     }
     DOMNodesBehaviour.prototype.mixin(Behaviour2.prototype.mixin(ConcatBehaviour.prototype));
     ConcatBehaviour.prototype.notify = function(now,value) {
-        this.length = this.downstream1.length + this.downstream2.length;
-        this.attributes = this.downstream1.attributes + this.downstream2.attributes;
+        this.length = this.downstream1.value.length + this.downstream2.value.length;
+        this.attributes = this.downstream1.value.attributes + this.downstream2.value.attributes;
 	this.notifyUpstream(now,this);
     }
     ConcatBehaviour.prototype.appendChildrenOf = function(node) {
@@ -565,13 +590,13 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     DOMNodeBehaviour.prototype.replaceChildrenAt = function(node,index) {
 	for (var i = 0; i < this.pool.length; i++) {
 	    if((!this.pool[i].parentNode) || ((this.pool[i].parentNode === this) && (index <= this.pool[i].index))) {
-		node.insertBefore(node.childNodes[index],this.pool[i]);
+		node.insertBefore(this.pool[i],node.childNodes[index]);
 		return;
 	    }
 	}
 	var fresh = this.build();
 	this.pool.push(fresh);
-	node.insertBefore(node.childNodes[i],fresh);
+	node.insertBefore(fresh,node.childNodes[i]);
     }
     DOMNodeBehaviour.prototype.length = 1;
     // TextBehaviour <: DOMNodeBehaviour, Behaviour1<String,TextBehaviour>

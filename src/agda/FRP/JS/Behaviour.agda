@@ -7,6 +7,7 @@ postulate
   Beh : RSet → RSet
   map : ∀ {A B} → ⟦ A ⇒ B ⟧ → ⟦ Beh A ⇒ Beh B ⟧
   [_] : ∀ {A} → A → ⟦ Beh ⟨ A ⟩ ⟧
+  join : ∀ {A} → ⟦ Beh (Beh A) ⇒ Beh A ⟧
   hold : ∀ {A} → ⟦ ⟨ A ⟩ ⇒ Evt ⟨ A ⟩ ⇒ Beh ⟨ A ⟩ ⟧
 
 {-# COMPILED_JS map function(A) { return function(B) { 
@@ -17,6 +18,10 @@ postulate
 
 {-# COMPILED_JS [_] function(A) { return function(a) { return function(s) { 
   return require("agda.frp").constant(a);
+}; }; } #-}
+
+{-# COMPILED_JS join function(A) { return function(s) { return function(b) {
+  return b.join();
 }; }; } #-}
 
 {-# COMPILED_JS hold function(A) { return function(s) { return function(a) { return function(e) {
