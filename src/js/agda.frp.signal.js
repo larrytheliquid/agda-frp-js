@@ -328,6 +328,9 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     // Behaviours are contiguous signals, which cache their most recent result
     function Behaviour() {}
     mixin.singleton.mixin(Behaviour.prototype);
+    Behaviour.prototype.compareAs = function() {
+	return this.value;
+    }
     Behaviour.prototype.addUpstream = function(signal) {
 	Signal.prototype.addUpstream.call(this,signal);
 	signal.notify(this.start,this.value);
@@ -423,6 +426,13 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
 	this.value = this;
     }
     mixin.singleton.mixin(DOMNodesBehaviour.prototype);
+    DOMNodesBehaviour.prototype.compareAs = function() {
+        var container = document.createElement("div");
+	var node = document.createElement("div");
+        container.appendChild(node);
+        this.appendChildrenOf(node);
+        return container.innerHTML;
+    }
     DOMNodesBehaviour.prototype.setChildrenOf = function(node) {
 	this.replaceChildrenOf(node,0);
 	while (node.childNodes.length > this.length) {
@@ -749,6 +759,11 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
 	constant: function(value) { return new ConstantBehaviour(value); },
         empty: function() { return new EmptyBehaviour(); },
 	geolocation: function() { return geolocation; },
-	reactimate: function(f) { return f(new DOW())(taskqueue.singleton.time); }
+	reactimate: function(f) { return f(new DOW())(taskqueue.singleton.time); },
+        equalNow: function(f, g) {
+          var now = taskqueue.singleton.time;
+          return f(now).compareAs() === g(now).compareAs();
+        },
+        dow: function() { return new DOW(); }
     };
 });
