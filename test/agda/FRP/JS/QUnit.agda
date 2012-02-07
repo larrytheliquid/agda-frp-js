@@ -14,7 +14,7 @@ data Test : Set where
   _,_ : Test → Test → Test
   ok : String → (b : {t : ⊤} → Bool) → {b✓ : True b} → Test
   ok! : String → (b : {t : ⊤} → Bool) → Test
-  ok[t] : String → (b : ⟦ Beh ⟨ Bool ⟩ ⟧) → Test
+  ok◇ : String → (b : ⟦ Beh ⟨ Bool ⟩ ⟧) → Test
 
 data TestSuite : Set where
   ε : TestSuite

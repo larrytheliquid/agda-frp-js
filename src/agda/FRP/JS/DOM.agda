@@ -21,10 +21,12 @@ postulate
 
 postulate
   DOW : Set
+  unattached : DOW
   left right : DOW → DOW
   child : String → DOW → DOW
   events : ∀ {A} → EventType A → DOW → ⟦ Evt A ⟧
 
+{-# COMPILED_JS unattached require("agda.frp").unattached() #-}
 {-# COMPILED_JS left function(w) { return w.left(); } #-}
 {-# COMPILED_JS right function(w) { return w.right(); } #-}
 {-# COMPILED_JS child function(a) { return function(w) { return w.child(a); }; } #-}

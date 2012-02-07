@@ -789,7 +789,7 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
 	constant: function(value) { return new ConstantBehaviour(value); },
         empty: function() { return new EmptyBehaviour(); },
 	geolocation: function() { return geolocation; },
-	reactimate: function(f) { return f(new DOW())(taskqueue.singleton.time); },
-        dow: function() { return new DOW(); }
+        unattached: function() { return new DOW(); },
+	reactimate: function(f) { return f(new DOW())(taskqueue.singleton.time); }
     };
 });
