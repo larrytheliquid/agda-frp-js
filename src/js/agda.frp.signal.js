@@ -328,6 +328,10 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
     // Behaviours are contiguous signals, which cache their most recent result
     function Behaviour() {}
     mixin.singleton.mixin(Behaviour.prototype);
+    Behaviour.prototype.anchor = function(notifier) {
+	// We add a dummy upstream neighbour to stop us from being disposed of
+	this.addUpstream({ uid: -1, rank: this.rank, notify: notifier });
+    }
     Behaviour.prototype.addUpstream = function(signal) {
 	Signal.prototype.addUpstream.call(this,signal);
 	signal.notify(this.start,this.value);
@@ -405,11 +409,9 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
         this.notifyUpstream(now,behaviour.value);
     }
     JoinBehaviour.prototype.attachTo = function(node) {
-	// We add a dummy upstream neighbour to stop us from being disposed of
-	this.addUpstream({ uid: -1, rank: this.rank, notify: function(now, value){
-            while (node.firstChild) { node.removeChild(node.firstChild); }
-	    value.appendChildrenOf(node);
-        }});
+	this.anchor(function(now, value) {
+            value.initializeChildrenOf(node);
+        });
     }
     // Convert an event into a behaviour
     function HoldBehaviour(init,downstream) {
@@ -463,6 +465,10 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
         this.appendChildrenOf(node);
         return container.innerHTML;
     }
+    DOMNodesBehaviour.prototype.initializeChildrenOf = function(node) {
+       	while (node.firstChild) { node.removeChild(node.firstChild); }
+	this.appendChildrenOf(node);
+    }
     DOMNodesBehaviour.prototype.setChildrenOf = function(node) {
 	this.replaceChildrenOf(node,0);
 	while (node.childNodes.length > this.length) {
@@ -489,10 +495,8 @@ define(["agda.frp.taskqueue","agda.mixin"],function(taskqueue,mixin) {
 	}
     }
     DOMNodesBehaviour.prototype.attachTo = function(node) {
-	// We add a dummy upstream neighbour to stop us from being disposed of
-	this.addUpstream({ uid: -1, rank: this.rank, notify: function(){} });
-	while (node.firstChild) { node.removeChild(node.firstChild); }
-	this.appendChildrenOf(node);
+	this.anchor(function(){});
+	this.initializeChildrenOf(node);
     }
     DOMNodesBehaviour.prototype.addEventListener = function(type,listener) {}
     DOMNodesBehaviour.prototype.removeEventListener = function(type,listener) {}
